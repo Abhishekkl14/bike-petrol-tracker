@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bike Petrol Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏍️ Bike Petrol Tracker</h1>
+      <p class="subtitle">Track your fuel expenses effortlessly</p>
+    </header>
+
+    <!-- Entry Form -->
+    <section class="card form-card">
+      <h2>Add Fuel Entry</h2>
+      <form id="fuelForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" required />
+          </div>
+          <div class="form-group">
+            <label for="fuelFilled">Fuel Filled (Litres)</label>
+            <input type="number" id="fuelFilled" step="0.01" min="0.01" placeholder="e.g. 5.5" required />
+          </div>
+          <div class="form-group">
+            <label for="pricePerLitre">Price per Litre (₹)</label>
+            <input type="number" id="pricePerLitre" step="0.01" min="0.01" placeholder="e.g. 104.50" required />
+          </div>
+          <div class="form-group">
+            <label for="avgMileage">Avg Mileage (km/L)</label>
+            <input type="number" id="avgMileage" step="0.1" min="0.1" placeholder="e.g. 45" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Add Entry</button>
+      </form>
+    </section>
+
+    <!-- Monthly Summary -->
+    <section class="card">
+      <h2>Monthly Summary</h2>
+      <div class="month-selector">
+        <button id="prevMonth" class="btn-icon" title="Previous month">&#9664;</button>
+        <span id="currentMonth"></span>
+        <button id="nextMonth" class="btn-icon" title="Next month">&#9654;</button>
+      </div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <span class="stat-label">Total Spent</span>
+          <span class="stat-value" id="totalSpent">₹0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Fuel</span>
+          <span class="stat-value" id="totalFuel">0 L</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Entries</span>
+          <span class="stat-value" id="totalEntries">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Est. Distance</span>
+          <span class="stat-value" id="estDistance">0 km</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chart -->
+    <section class="card">
+      <h2>Spending Over Months</h2>
+      <div class="chart-container">
+        <canvas id="spendingChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Fuel Log Table -->
+    <section class="card">
+      <h2>Fuel Log</h2>
+      <div class="table-wrapper">
+        <table id="fuelTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Fuel (L)</th>
+              <th>₹/Litre</th>
+              <th>Total Cost (₹)</th>
+              <th>Avg Mileage</th>
+              <th>Est. Range (km)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="fuelTableBody">
+          </tbody>
+        </table>
+        <p id="noEntries" class="no-entries">No fuel entries yet. Add your first entry above!</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>Data is saved locally in your browser.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
