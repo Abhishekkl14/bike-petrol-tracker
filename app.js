@@ -12,6 +12,7 @@ function saveEntries(entries) {
 
 let entries = loadEntries();
 let selectedDate = new Date(); // controls which month is shown in the summary
+let editingId = null; // tracks which entry is being edited
 
 // ===== DOM refs =====
 const form = document.getElementById("fuelForm");
@@ -151,14 +152,17 @@ function renderTable() {
   tableBody.innerHTML = sorted
     .map(
       (e) => `
-    <tr>
+    <tr${editingId === e.id ? ' class="editing-row"' : ""}>
       <td>${formatDate(e.date)}</td>
       <td>${e.fuelFilled.toFixed(2)}</td>
       <td>₹${e.pricePerLitre.toFixed(2)}</td>
       <td>₹${e.totalCost.toFixed(2)}</td>
       <td>${e.avgMileage} km/L</td>
       <td>${(e.fuelFilled * e.avgMileage).toFixed(1)} km</td>
-      <td><button class="btn-delete" data-id="${e.id}">Delete</button></td>
+      <td class="action-btns">
+        <button class="btn-edit" data-id="${e.id}">Edit</button>
+        <button class="btn-delete" data-id="${e.id}">Delete</button>
+      </td>
     </tr>
   `
     )
@@ -194,36 +198,83 @@ function renderAll() {
   renderChart();
 }
 
+// ===== Form state helpers =====
+const submitBtn = form.querySelector("button[type='submit']");
+
+function setFormEditMode(entry) {
+  editingId = entry.id;
+  dateInput.value = entry.date;
+  fuelInput.value = entry.fuelFilled;
+  priceInput.value = entry.pricePerLitre;
+  mileageInput.value = entry.avgMileage;
+  submitBtn.textContent = "Update Entry";
+  form.classList.add("editing");
+  form.parentElement.querySelector("h2").textContent = "Edit Fuel Entry";
+  renderTable();
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetForm() {
+  editingId = null;
+  form.reset();
+  dateInput.value = new Date().toISOString().split("T")[0];
+  submitBtn.textContent = "Add Entry";
+  form.classList.remove("editing");
+  form.parentElement.querySelector("h2").textContent = "Add Fuel Entry";
+}
+
 // ===== Event handlers =====
 form.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  const entry = {
-    id: Date.now().toString(),
-    date: dateInput.value,
-    fuelFilled: parseFloat(fuelInput.value),
-    pricePerLitre: parseFloat(priceInput.value),
-    avgMileage: parseFloat(mileageInput.value),
-    totalCost: parseFloat(fuelInput.value) * parseFloat(priceInput.value),
-  };
+  if (editingId) {
+    const idx = entries.findIndex((en) => en.id === editingId);
+    if (idx !== -1) {
+      entries[idx].date = dateInput.value;
+      entries[idx].fuelFilled = parseFloat(fuelInput.value);
+      entries[idx].pricePerLitre = parseFloat(priceInput.value);
+      entries[idx].avgMileage = parseFloat(mileageInput.value);
+      entries[idx].totalCost =
+        parseFloat(fuelInput.value) * parseFloat(priceInput.value);
+    }
+    saveEntries(entries);
+    selectedDate = new Date(dateInput.value + "T00:00:00");
+    resetForm();
+    renderAll();
+    showToast("Entry updated!");
+  } else {
+    const entry = {
+      id: Date.now().toString(),
+      date: dateInput.value,
+      fuelFilled: parseFloat(fuelInput.value),
+      pricePerLitre: parseFloat(priceInput.value),
+      avgMileage: parseFloat(mileageInput.value),
+      totalCost: parseFloat(fuelInput.value) * parseFloat(priceInput.value),
+    };
 
-  entries.push(entry);
-  saveEntries(entries);
+    entries.push(entry);
+    saveEntries(entries);
+    selectedDate = new Date(entry.date + "T00:00:00");
+    renderAll();
 
-  // Jump summary to the month of the new entry
-  selectedDate = new Date(entry.date + "T00:00:00");
-  renderAll();
-
-  form.reset();
-  dateInput.value = new Date().toISOString().split("T")[0];
-  showToast("Entry added!");
+    form.reset();
+    dateInput.value = new Date().toISOString().split("T")[0];
+    showToast("Entry added!");
+  }
 });
 
 tableBody.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-edit")) {
+    const id = e.target.dataset.id;
+    const entry = entries.find((en) => en.id === id);
+    if (entry) setFormEditMode(entry);
+  }
+
   if (e.target.classList.contains("btn-delete")) {
     const id = e.target.dataset.id;
     entries = entries.filter((en) => en.id !== id);
     saveEntries(entries);
+    if (editingId === id) resetForm();
     renderAll();
     showToast("Entry deleted");
   }

@@ -267,6 +267,28 @@ tbody tr:hover {
   background: var(--stat-bg);
 }
 
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-edit {
+  background: none;
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
 .btn-delete {
   background: none;
   border: 1.5px solid var(--danger);
@@ -282,6 +304,22 @@ tbody tr:hover {
 .btn-delete:hover {
   background: var(--danger);
   color: #fff;
+}
+
+.editing-row {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.form-card.card:has(.editing) {
+  border: 2px solid var(--primary);
+}
+
+form.editing .btn-primary {
+  background: #f59e0b;
+}
+
+form.editing .btn-primary:hover {
+  background: #d97706;
 }
 
 .no-entries {
