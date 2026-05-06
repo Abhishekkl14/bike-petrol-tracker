@@ -239,6 +239,41 @@ nextMonthBtn.addEventListener("click", () => {
   renderSummary();
 });
 
+// ===== Export to Excel =====
+document.getElementById("exportExcel").addEventListener("click", () => {
+  if (entries.length === 0) {
+    showToast("No entries to export");
+    return;
+  }
+
+  const sorted = [...entries].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
+  const rows = sorted.map((e) => ({
+    Date: formatDate(e.date),
+    "Fuel Filled (L)": e.fuelFilled,
+    "Price per Litre (₹)": e.pricePerLitre,
+    "Total Cost (₹)": e.totalCost,
+    "Avg Mileage (km/L)": e.avgMileage,
+    "Est. Range (km)": parseFloat((e.fuelFilled * e.avgMileage).toFixed(1)),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Auto-size columns
+  const colWidths = Object.keys(rows[0]).map((key) => ({
+    wch: Math.max(key.length, 14),
+  }));
+  ws["!cols"] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Fuel Log");
+
+  XLSX.writeFile(wb, "fuel-log.xlsx");
+  showToast("Excel file downloaded!");
+});
+
 // ===== Init =====
 dateInput.value = new Date().toISOString().split("T")[0];
 initChart();

@@ -202,6 +202,38 @@ header h1 {
   height: 280px;
 }
 
+/* ===== Section Header ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+}
+
+.btn-export {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-export:hover {
+  background: #15803d;
+}
+
+.btn-export:active {
+  transform: scale(0.97);
+}
+
 /* ===== Table ===== */
 .table-wrapper {
   overflow-x: auto;
