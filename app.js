@@ -1,5 +1,5 @@
 // ===== State =====
-const STORAGE_KEY = "bikePetrolTracker";
+const STORAGE_KEY = "petrolTracker";
 
 function loadEntries() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -11,23 +11,22 @@ function saveEntries(entries) {
 }
 
 let entries = loadEntries();
-let selectedDate = new Date(); // controls which month is shown in the summary
-let editingId = null; // tracks which entry is being edited
+let editingId = null;
 
 // ===== DOM refs =====
 const form = document.getElementById("fuelForm");
+const vehicleInput = document.getElementById("vehicleNumber");
+const vehicleDatalist = document.getElementById("vehicleList");
 const dateInput = document.getElementById("date");
 const fuelInput = document.getElementById("fuelFilled");
-const priceInput = document.getElementById("pricePerLitre");
-const mileageInput = document.getElementById("avgMileage");
+const priceInput = document.getElementById("price");
+const locationInput = document.getElementById("location");
 
+const vehicleFilter = document.getElementById("vehicleFilter");
 const totalSpentEl = document.getElementById("totalSpent");
 const totalFuelEl = document.getElementById("totalFuel");
 const totalEntriesEl = document.getElementById("totalEntries");
-const estDistanceEl = document.getElementById("estDistance");
-const currentMonthEl = document.getElementById("currentMonth");
-const prevMonthBtn = document.getElementById("prevMonth");
-const nextMonthBtn = document.getElementById("nextMonth");
+const avgPricePerLitreEl = document.getElementById("avgPricePerLitre");
 
 const tableBody = document.getElementById("fuelTableBody");
 const noEntriesEl = document.getElementById("noEntries");
@@ -43,7 +42,7 @@ function initChart() {
       labels: [],
       datasets: [
         {
-          label: "Monthly Spending (₹)",
+          label: "Monthly Spending (\u20b9)",
           data: [],
           backgroundColor: "rgba(37, 99, 235, 0.7)",
           borderColor: "rgba(37, 99, 235, 1)",
@@ -59,7 +58,7 @@ function initChart() {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => `₹${ctx.raw.toFixed(2)}`,
+            label: (ctx) => `\u20b9${ctx.raw.toFixed(2)}`,
           },
         },
       },
@@ -67,7 +66,7 @@ function initChart() {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: (v) => `₹${v}`,
+            callback: (v) => `\u20b9${v}`,
           },
           grid: { color: "#e2e8f0" },
         },
@@ -101,6 +100,12 @@ function monthLabel(year, month) {
   });
 }
 
+function getUniqueVehicles() {
+  const vehicles = new Set();
+  entries.forEach((e) => vehicles.add(e.vehicleNumber.toUpperCase()));
+  return [...vehicles].sort();
+}
+
 function showToast(msg) {
   let toast = document.querySelector(".toast");
   if (!toast) {
@@ -113,32 +118,58 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
+// ===== Update vehicle datalist and filter dropdown =====
+function updateVehicleOptions() {
+  const vehicles = getUniqueVehicles();
+
+  vehicleDatalist.innerHTML = vehicles
+    .map((v) => `<option value="${v}">`)
+    .join("");
+
+  const currentFilter = vehicleFilter.value;
+  vehicleFilter.innerHTML = '<option value="__all__">All Vehicles</option>';
+  vehicles.forEach((v) => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    vehicleFilter.appendChild(opt);
+  });
+
+  if (vehicles.includes(currentFilter) || currentFilter === "__all__") {
+    vehicleFilter.value = currentFilter;
+  } else {
+    vehicleFilter.value = "__all__";
+  }
+}
+
 // ===== Render functions =====
 function renderSummary() {
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth();
-  const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const selected = vehicleFilter.value;
 
-  currentMonthEl.textContent = monthLabel(year, month);
+  const filtered =
+    selected === "__all__"
+      ? entries
+      : entries.filter((e) => e.vehicleNumber.toUpperCase() === selected);
 
-  const monthEntries = entries.filter((e) => monthYearKey(e.date) === key);
+  const totalFuel = filtered.reduce((s, e) => s + e.fuelFilled, 0);
+  const totalSpent = filtered.reduce((s, e) => s + e.price, 0);
+  const avgPrice = totalFuel > 0 ? totalSpent / totalFuel : 0;
 
-  const spent = monthEntries.reduce((s, e) => s + e.totalCost, 0);
-  const fuel = monthEntries.reduce((s, e) => s + e.fuelFilled, 0);
-  const dist = monthEntries.reduce(
-    (s, e) => s + e.fuelFilled * e.avgMileage,
-    0
-  );
-
-  totalSpentEl.textContent = `₹${spent.toFixed(2)}`;
-  totalFuelEl.textContent = `${fuel.toFixed(2)} L`;
-  totalEntriesEl.textContent = monthEntries.length;
-  estDistanceEl.textContent = `${dist.toFixed(1)} km`;
+  totalFuelEl.textContent = `${totalFuel.toFixed(2)} L`;
+  totalSpentEl.textContent = `\u20b9${totalSpent.toFixed(2)}`;
+  totalEntriesEl.textContent = filtered.length;
+  avgPricePerLitreEl.textContent = `\u20b9${avgPrice.toFixed(2)}`;
 }
 
 function renderTable() {
-  // Sort entries newest-first
-  const sorted = [...entries].sort(
+  const selected = vehicleFilter.value;
+
+  const filtered =
+    selected === "__all__"
+      ? [...entries]
+      : entries.filter((e) => e.vehicleNumber.toUpperCase() === selected);
+
+  const sorted = filtered.sort(
     (a, b) => new Date(b.date) - new Date(a.date)
   );
 
@@ -153,12 +184,12 @@ function renderTable() {
     .map(
       (e) => `
     <tr${editingId === e.id ? ' class="editing-row"' : ""}>
+      <td>${e.vehicleNumber}</td>
       <td>${formatDate(e.date)}</td>
       <td>${e.fuelFilled.toFixed(2)}</td>
-      <td>₹${e.pricePerLitre.toFixed(2)}</td>
-      <td>₹${e.totalCost.toFixed(2)}</td>
-      <td>${e.avgMileage} km/L</td>
-      <td>${(e.fuelFilled * e.avgMileage).toFixed(1)} km</td>
+      <td>\u20b9${e.price.toFixed(2)}</td>
+      <td>\u20b9${(e.price / e.fuelFilled).toFixed(2)}</td>
+      <td>${e.location || "-"}</td>
       <td class="action-btns">
         <button class="btn-edit" data-id="${e.id}">Edit</button>
         <button class="btn-delete" data-id="${e.id}">Delete</button>
@@ -170,14 +201,19 @@ function renderTable() {
 }
 
 function renderChart() {
-  // Aggregate spending by month across all entries
+  const selected = vehicleFilter.value;
+
+  const filtered =
+    selected === "__all__"
+      ? entries
+      : entries.filter((e) => e.vehicleNumber.toUpperCase() === selected);
+
   const monthMap = {};
-  entries.forEach((e) => {
+  filtered.forEach((e) => {
     const key = monthYearKey(e.date);
-    monthMap[key] = (monthMap[key] || 0) + e.totalCost;
+    monthMap[key] = (monthMap[key] || 0) + e.price;
   });
 
-  // Sort chronologically and show last 12 months
   const sortedKeys = Object.keys(monthMap).sort();
   const last12 = sortedKeys.slice(-12);
 
@@ -193,6 +229,7 @@ function renderChart() {
 }
 
 function renderAll() {
+  updateVehicleOptions();
   renderSummary();
   renderTable();
   renderChart();
@@ -203,10 +240,11 @@ const submitBtn = form.querySelector("button[type='submit']");
 
 function setFormEditMode(entry) {
   editingId = entry.id;
+  vehicleInput.value = entry.vehicleNumber;
   dateInput.value = entry.date;
   fuelInput.value = entry.fuelFilled;
-  priceInput.value = entry.pricePerLitre;
-  mileageInput.value = entry.avgMileage;
+  priceInput.value = entry.price;
+  locationInput.value = entry.location || "";
   submitBtn.textContent = "Update Entry";
   form.classList.add("editing");
   form.parentElement.querySelector("h2").textContent = "Edit Fuel Entry";
@@ -227,34 +265,33 @@ function resetForm() {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
 
+  const vehicleNum = vehicleInput.value.trim().toUpperCase();
+
   if (editingId) {
     const idx = entries.findIndex((en) => en.id === editingId);
     if (idx !== -1) {
+      entries[idx].vehicleNumber = vehicleNum;
       entries[idx].date = dateInput.value;
       entries[idx].fuelFilled = parseFloat(fuelInput.value);
-      entries[idx].pricePerLitre = parseFloat(priceInput.value);
-      entries[idx].avgMileage = parseFloat(mileageInput.value);
-      entries[idx].totalCost =
-        parseFloat(fuelInput.value) * parseFloat(priceInput.value);
+      entries[idx].price = parseFloat(priceInput.value);
+      entries[idx].location = locationInput.value.trim();
     }
     saveEntries(entries);
-    selectedDate = new Date(dateInput.value + "T00:00:00");
     resetForm();
     renderAll();
     showToast("Entry updated!");
   } else {
     const entry = {
       id: Date.now().toString(),
+      vehicleNumber: vehicleNum,
       date: dateInput.value,
       fuelFilled: parseFloat(fuelInput.value),
-      pricePerLitre: parseFloat(priceInput.value),
-      avgMileage: parseFloat(mileageInput.value),
-      totalCost: parseFloat(fuelInput.value) * parseFloat(priceInput.value),
+      price: parseFloat(priceInput.value),
+      location: locationInput.value.trim(),
     };
 
     entries.push(entry);
     saveEntries(entries);
-    selectedDate = new Date(entry.date + "T00:00:00");
     renderAll();
 
     form.reset();
@@ -280,14 +317,10 @@ tableBody.addEventListener("click", (e) => {
   }
 });
 
-prevMonthBtn.addEventListener("click", () => {
-  selectedDate.setMonth(selectedDate.getMonth() - 1);
+vehicleFilter.addEventListener("change", () => {
   renderSummary();
-});
-
-nextMonthBtn.addEventListener("click", () => {
-  selectedDate.setMonth(selectedDate.getMonth() + 1);
-  renderSummary();
+  renderTable();
+  renderChart();
 });
 
 // ===== Export to Excel =====
@@ -297,22 +330,27 @@ document.getElementById("exportExcel").addEventListener("click", () => {
     return;
   }
 
-  const sorted = [...entries].sort(
+  const selected = vehicleFilter.value;
+  const filtered =
+    selected === "__all__"
+      ? [...entries]
+      : entries.filter((e) => e.vehicleNumber.toUpperCase() === selected);
+
+  const sorted = filtered.sort(
     (a, b) => new Date(b.date) - new Date(a.date)
   );
 
   const rows = sorted.map((e) => ({
+    "Vehicle Number": e.vehicleNumber,
     Date: formatDate(e.date),
     "Fuel Filled (L)": e.fuelFilled,
-    "Price per Litre (₹)": e.pricePerLitre,
-    "Total Cost (₹)": e.totalCost,
-    "Avg Mileage (km/L)": e.avgMileage,
-    "Est. Range (km)": parseFloat((e.fuelFilled * e.avgMileage).toFixed(1)),
+    "Price (\u20b9)": e.price,
+    "\u20b9/Litre": parseFloat((e.price / e.fuelFilled).toFixed(2)),
+    Location: e.location || "-",
   }));
 
   const ws = XLSX.utils.json_to_sheet(rows);
 
-  // Auto-size columns
   const colWidths = Object.keys(rows[0]).map((key) => ({
     wch: Math.max(key.length, 14),
   }));

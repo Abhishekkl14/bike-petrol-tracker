@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bike Petrol Tracker</title>
+  <title>Petrol Tracker</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -11,8 +11,8 @@
 <body>
   <div class="container">
     <header>
-      <h1>🏍️ Bike Petrol Tracker</h1>
-      <p class="subtitle">Track your fuel expenses effortlessly</p>
+      <h1>&#9981; Petrol Tracker</h1>
+      <p class="subtitle">Track your vehicle fuel expenses effortlessly</p>
     </header>
 
     <!-- Entry Form -->
@@ -20,6 +20,11 @@
       <h2>Add Fuel Entry</h2>
       <form id="fuelForm">
         <div class="form-grid">
+          <div class="form-group">
+            <label for="vehicleNumber">Vehicle Number</label>
+            <input type="text" id="vehicleNumber" list="vehicleList" placeholder="e.g. KA-01-AB-1234" required />
+            <datalist id="vehicleList"></datalist>
+          </div>
           <div class="form-group">
             <label for="date">Date</label>
             <input type="date" id="date" required />
@@ -29,42 +34,43 @@
             <input type="number" id="fuelFilled" step="0.01" min="0.01" placeholder="e.g. 5.5" required />
           </div>
           <div class="form-group">
-            <label for="pricePerLitre">Price per Litre (₹)</label>
-            <input type="number" id="pricePerLitre" step="0.01" min="0.01" placeholder="e.g. 104.50" required />
+            <label for="price">Price (&#8377;)</label>
+            <input type="number" id="price" step="0.01" min="0.01" placeholder="e.g. 500" required />
           </div>
           <div class="form-group">
-            <label for="avgMileage">Avg Mileage (km/L)</label>
-            <input type="number" id="avgMileage" step="0.1" min="0.1" placeholder="e.g. 45" required />
+            <label for="location">Location <span class="optional-tag">(optional)</span></label>
+            <input type="text" id="location" placeholder="e.g. Shell Pump, MG Road" />
           </div>
         </div>
         <button type="submit" class="btn-primary">Add Entry</button>
       </form>
     </section>
 
-    <!-- Monthly Summary -->
+    <!-- Vehicle Summary -->
     <section class="card">
-      <h2>Monthly Summary</h2>
-      <div class="month-selector">
-        <button id="prevMonth" class="btn-icon" title="Previous month">&#9664;</button>
-        <span id="currentMonth"></span>
-        <button id="nextMonth" class="btn-icon" title="Next month">&#9654;</button>
+      <h2>Vehicle Summary</h2>
+      <div class="vehicle-filter">
+        <label for="vehicleFilter">Select Vehicle:</label>
+        <select id="vehicleFilter">
+          <option value="__all__">All Vehicles</option>
+        </select>
       </div>
       <div class="stats-grid" id="statsGrid">
         <div class="stat-card">
-          <span class="stat-label">Total Spent</span>
-          <span class="stat-value" id="totalSpent">₹0</span>
-        </div>
-        <div class="stat-card">
           <span class="stat-label">Total Fuel</span>
           <span class="stat-value" id="totalFuel">0 L</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Spent</span>
+          <span class="stat-value" id="totalSpent">&#8377;0</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">Entries</span>
           <span class="stat-value" id="totalEntries">0</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Est. Distance</span>
-          <span class="stat-value" id="estDistance">0 km</span>
+          <span class="stat-label">Avg Price/L</span>
+          <span class="stat-value" id="avgPricePerLitre">&#8377;0</span>
         </div>
       </div>
     </section>
@@ -81,18 +87,18 @@
     <section class="card">
       <div class="section-header">
         <h2>Fuel Log</h2>
-        <button id="exportExcel" class="btn-export" title="Download as Excel">📥 Export to Excel</button>
+        <button id="exportExcel" class="btn-export" title="Download as Excel">&#128229; Export to Excel</button>
       </div>
       <div class="table-wrapper">
         <table id="fuelTable">
           <thead>
             <tr>
+              <th>Vehicle</th>
               <th>Date</th>
               <th>Fuel (L)</th>
-              <th>₹/Litre</th>
-              <th>Total Cost (₹)</th>
-              <th>Avg Mileage</th>
-              <th>Est. Range (km)</th>
+              <th>Price (&#8377;)</th>
+              <th>&#8377;/Litre</th>
+              <th>Location</th>
               <th>Action</th>
             </tr>
           </thead>
